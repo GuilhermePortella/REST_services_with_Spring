@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.IanaLinkRelations;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
 /**
@@ -18,10 +20,18 @@ import org.springframework.web.bind.annotation.DeleteMapping;
  */
 public class EmployeeController {
 
+    private final EmployeeModelAssembler assembler;
     private final EmployeeRepository repository;
 
     public EmployeeController(EmployeeRepository repository) {
         this.repository = repository;
+        this.assembler = null;
+    }
+
+    EmployeeController(EmployeeRepository repository, EmployeeModelAssembler assembler) {
+
+        this.repository = repository;
+        this.assembler = assembler;
     }
 
     // Aggregate root
@@ -41,12 +51,16 @@ public class EmployeeController {
 
         return CollectionModel.of(employees, linkTo(methodOn(EmployeeController.class).all()).withSelfRel());
     }
-    
-    //curl -v localhost:8080/employees | json_pp
 
+    //curl -v localhost:8080/employees | json_pp
     @PostMapping("/employees")
-    Employee newEmployee(@RequestBody Employee newEmployee) {
-        return repository.save(newEmployee);
+    ResponseEntity<?> newEmployee(@RequestBody Employee newEmployee) {
+
+        EntityModel<Employee> entityModel = assembler.toModel(repository.save(newEmployee));
+
+        return ResponseEntity //
+                .created(entityModel.getRequiredLink(IanaLinkRelations.SELF).toUri()) //
+                .body(entityModel);
     }// Single item
 
 //    @GetMapping("/employees/{id}")
@@ -54,6 +68,7 @@ public class EmployeeController {
 //        return repository.findById(id)
 //                .orElseThrow(() -> new EmployeeNotFoundException(id));
 //    }
+    // tag::get-single-item[]
     @GetMapping("/employees/{id}")
     EntityModel<Employee> one(@PathVariable Long id) {
 
@@ -63,24 +78,33 @@ public class EmployeeController {
         return EntityModel.of(employee, //
                 linkTo(methodOn(EmployeeController.class).one(id)).withSelfRel(),
                 linkTo(methodOn(EmployeeController.class).all()).withRel("employees"));
-    }
+    }// end::get-single-item[]
 
     @PutMapping("/employees/{id}")
-    Employee replaceEmployee(@RequestBody Employee newEmployee,
-            @PathVariable Long id) {
+    ResponseEntity<?> replaceEmployee(@RequestBody Employee newEmployee, @PathVariable Long id) {
 
-        return repository.findById(id)
+        Employee updatedEmployee = repository.findById(id) //
                 .map(employee -> {
                     employee.setName(newEmployee.getName());
                     employee.setRole(newEmployee.getRole());
                     return repository.save(employee);
-                }).orElseGet(() -> {
-            return repository.save(newEmployee);
-        });
+                }) //
+                .orElseGet(() -> {
+                    return repository.save(newEmployee);
+                });
+
+        EntityModel<Employee> entityModel = assembler.toModel(updatedEmployee);
+
+        return ResponseEntity //
+                .created(entityModel.getRequiredLink(IanaLinkRelations.SELF).toUri()) //
+                .body(entityModel);
     }
 
-    @DeleteMapping("/employyes{id}")
-    void deleteEmployee(@PathVariable Long id) {
+    @DeleteMapping("/employees/{id}")
+    ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
+
         repository.deleteById(id);
+
+        return ResponseEntity.noContent().build();
     }
 }
