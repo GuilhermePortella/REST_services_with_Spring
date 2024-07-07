@@ -1,6 +1,5 @@
 package com.payroll.PayrollWeb;
 
-import ch.qos.logback.core.status.Status;
 import java.util.Objects;
 
 import jakarta.persistence.Entity;
@@ -8,13 +7,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+
 /**
  *
  * @author Guilherme
  */
 @Entity
 @Table(name = "CUSTOMER_ORDER")
-public class Order {
+class Order {
 
     private @Id
     @GeneratedValue
@@ -23,24 +23,33 @@ public class Order {
     private String description;
     private Status status;
 
+    Order() {
+    }
+
+    Order(String description, Status status) {
+
+        this.description = description;
+        this.status = status;
+    }
+
     public Long getId() {
-        return id;
+        return this.id;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    public Status getStatus() {
+        return this.status;
     }
 
     public void setId(Long id) {
         this.id = id;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Status getStatus() {
-        return status;
     }
 
     public void setStatus(Status status) {
@@ -57,8 +66,7 @@ public class Order {
             return false;
         }
         Order order = (Order) o;
-        return Objects.equals(this.id, order.id) 
-                && Objects.equals(this.description, order.description)
+        return Objects.equals(this.id, order.id) && Objects.equals(this.description, order.description)
                 && this.status == order.status;
     }
 
@@ -69,9 +77,6 @@ public class Order {
 
     @Override
     public String toString() {
-        return "Order{" + "id=" + 
-                this.id + ", description='" + 
-                this.description + '\'' + ", status=" + 
-                this.status + '}';
+        return "Order{" + "id=" + this.id + ", description='" + this.description + '\'' + ", status=" + this.status + '}';
     }
 }
