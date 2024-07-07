@@ -13,3 +13,4 @@ Building REST services with Spring
 - Spring Web
 - Spring Data JPA
 - H2 Database
+- Spring HATEOAS
